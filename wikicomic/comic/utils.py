@@ -15,8 +15,12 @@ from google.genai import types
 from PIL import Image
 from io import BytesIO
 import base64
+from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
+
+# Load environment variables from .env file in the comic directory
+load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
 
 # Monkey patch groq client initialization to prevent proxies issues
 original_init = groq.Client.__init__
@@ -208,15 +212,19 @@ class WikipediaExtractor:
             logger.error(f"Failed to save extracted data: {str(e)}")
 
 class StoryGenerator:
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str = None):
         """
         Initialize the Groq story generator
         
         Args:
-            api_key: Groq API key
+            api_key: Groq API key (optional, will use environment variable if not provided)
         """
+        self.api_key = api_key or os.getenv('GROQ_API_KEY')
+        if not self.api_key:
+            raise ValueError("GROQ_API_KEY environment variable is not set")
+            
         # Initialize client with the patched init method (no proxy handling needed)
-        self.client = groq.Client(api_key=api_key)
+        self.client = groq.Client(api_key=self.api_key)
         logger.info("StoryGenerator initialized with Groq client")
 
     def generate_comic_storyline(self, title: str, content: str, target_length: str = "medium") -> str:
@@ -444,17 +452,18 @@ class StoryGenerator:
             return [f"Error generating scene prompt: {str(e)}"]
 
 class ComicImageGenerator:
-    def __init__(self, api_key: str = "AIzaSyCp8mk8lhwDnxlGjgwHEvehZpbbbazX8LU"):
+    def __init__(self, api_key: str = None):
         """
         Initialize the Comic Image Generator
         
         Args:
-            api_key: Google Gemini API key
+            api_key: Google Gemini API key (optional, will use environment variable if not provided)
         """
-        self.api_key = api_key
-        # genai.configure(api_key=api_key)
-        client = genai.Client(api_key=api_key)
-        # self.client = genai.Client()
+        self.api_key = api_key or os.getenv('GEMINI_API_KEY')
+        if not self.api_key:
+            raise ValueError("GEMINI_API_KEY environment variable is not set")
+            
+        client = genai.Client(api_key=self.api_key)
         self.client = client
         self.logger = logging.getLogger(__name__)
         logger.info("ComicImageGenerator initialized with Gemini API")
