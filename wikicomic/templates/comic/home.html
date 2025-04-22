@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}WikiComic - AI-Generated Comics from Wikipedia{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold">Wikipedia Comic Generator</h1>
+        <p class="lead mb-4">Transform Wikipedia articles into engaging comic strips with AI!</p>
+
+        <form method="post" action="{% url 'search_wikipedia' %}" class="mb-4 mx-auto" style="max-width: 600px;">
+            {% csrf_token %}
+            <div class="input-group">
+                <input type="text" name="query" class="form-control form-control-lg" placeholder="Search for a topic..." required>
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {% if recent_comics %}
+    <div class="my-4">
+        <h2 class="h3 mb-4">Recent Comics</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for comic in recent_comics %}
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    {% if comic.scenes|length > 0 %}
+                    <img src="{{ MEDIA_URL }}{{ comic.scenes.0.image }}" class="card-img-top" alt="{{ comic.title }} cover">
+                    {% else %}
+                    <div class="card-img-top bg-light text-center py-5">No cover image</div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ comic.title }}</h5>
+                        <p class="card-text small text-muted">
+                            {{ comic.scenes|length }} scenes • Generated {{ comic.created_at|date:"M d, Y" }}
+                        </p>
+                        <a href="{% url 'view_comic' comic_id=comic._id %}" class="btn btn-primary w-100">View Comic</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row mt-5 mb-3">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3 text-primary fs-1">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h5 class="card-title">1. Search Wikipedia</h5>
+                    <p class="card-text">Find any topic you want to learn about in comic form</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3 text-primary fs-1">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <h5 class="card-title">2. Customize Your Comic</h5>
+                    <p class="card-text">Choose your comic style, length, and other options</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="mb-3 text-primary fs-1">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <h5 class="card-title">3. Generate & Enjoy</h5>
+                    <p class="card-text">Our AI creates a unique comic strip just for you</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

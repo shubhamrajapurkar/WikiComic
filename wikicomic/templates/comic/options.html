@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}WikiComic - Customize Your Comic{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Create Comic: {{ page_info.title }}</h1>
+        <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-home"></i> Home
+        </a>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">About this Article</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ page_info.summary|truncatewords:50 }}</p>
+                    <a href="{{ page_info.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                        Read on Wikipedia <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Customize Your Comic</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'generate_comic' %}">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="comic_style" class="form-label">Comic Style</label>
+                            <select name="comic_style" id="comic_style" class="form-select">
+                                {% for style in comic_styles %}
+                                <option value="{{ style }}" {% if style == 'comic book' %}selected{% endif %}>{{ style|title }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Choose the visual style for your comic</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="target_length" class="form-label">Story Length</label>
+                            <select name="target_length" id="target_length" class="form-select">
+                                {% for length in target_lengths %}
+                                <option value="{{ length }}" {% if length == 'medium' %}selected{% endif %}>{{ length|title }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Longer comics have more detailed storylines</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="num_scenes" class="form-label">Number of Scenes: <span id="num_scenes_value">8</span></label>
+                            <input type="range" class="form-range" min="3" max="15" value="8" step="1" id="num_scenes_range" name="num_scenes" 
+                                  oninput="document.getElementById('num_scenes_value').textContent = this.value">
+                            <div class="form-text">More scenes mean more comic panels</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="age_group" class="form-label">Target Audience</label>
+                            <select name="age_group" id="age_group" class="form-select">
+                                {% for age in age_groups %}
+                                <option value="{{ age }}" {% if age == 'general' %}selected{% endif %}>{{ age|title }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Adjusts content complexity for different audiences</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="education_level" class="form-label">Education Level</label>
+                            <select name="education_level" id="education_level" class="form-select">
+                                {% for level in education_levels %}
+                                <option value="{{ level }}" {% if level == 'standard' %}selected{% endif %}>{{ level|title }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Adjust the educational depth of the content</div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> Comic generation can take 2-5 minutes depending on options.
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-magic"></i> Generate Comic
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

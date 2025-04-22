@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+
+{% block title %}WikiComic - {{ comic.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header with title and actions -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">{{ comic.title }}</h1>
+            <p class="text-muted mb-0">Generated on {{ comic.created_at|date:"F d, Y" }}</p>
+        </div>
+        <div>
+            <a href="{% url 'home' %}" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <a href="#" class="btn btn-primary" onclick="window.print()">
+                <i class="fas fa-print"></i> Print Comic
+            </a>
+        </div>
+    </div>
+    
+    <!-- Comic info -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <h5 class="card-title">About this comic</h5>
+                    <p>{{ comic.storyline|truncatewords:50 }}</p>
+                    <div class="d-flex flex-wrap">
+                        <span class="badge bg-primary me-2 mb-2">{{ scenes|length }} scenes</span>
+                        {% if comic.comic_style %}
+                        <span class="badge bg-secondary me-2 mb-2">{{ comic.comic_style }}</span>
+                        {% endif %}
+                        {% if comic.age_group %}
+                        <span class="badge bg-info me-2 mb-2">{{ comic.age_group }}</span>
+                        {% endif %}
+                        {% if comic.education_level %}
+                        <span class="badge bg-dark me-2 mb-2">{{ comic.education_level }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{{ comic.wikipedia_url }}" target="_blank" class="btn btn-outline-info mt-3">
+                        <i class="fas fa-external-link-alt"></i> Read on Wikipedia
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scene navigation -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title">Navigate Scenes</h5>
+            <div class="d-flex flex-wrap justify-content-center" id="scene-nav">
+                {% for scene in scenes %}
+                <button class="btn btn-outline-primary m-1 scene-btn" data-scene-id="{{ scene.scene_number }}">
+                    {{ scene.scene_number }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Comic scenes -->
+    <div id="comic-container">
+        {% for scene in scenes %}
+        <div class="card mb-4 shadow-sm scene-card" id="scene-{{ scene.scene_number }}" {% if not forloop.first %}style="display: none;"{% endif %}>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Scene {{ scene.scene_number }} of {{ scenes|length }}</h5>
+                <div class="btn-group">
+                    {% if not forloop.first %}
+                    <button class="btn btn-sm btn-outline-secondary prev-scene" data-scene-id="{{ scene.scene_number }}">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </button>
+                    {% endif %}
+                    {% if not forloop.last %}
+                    <button class="btn btn-sm btn-outline-secondary next-scene" data-scene-id="{{ scene.scene_number }}">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body text-center">
+                <img src="{{ MEDIA_URL }}{{ scene.image }}" class="img-fluid comic-image mb-3" alt="Scene {{ scene.scene_number }}">
+                <p class="scene-description">{{ scene.prompt }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- View all scenes button -->
+    <div class="text-center mb-5">
+        <button id="view-all-btn" class="btn btn-lg btn-success">
+            <i class="fas fa-images"></i> View All Scenes
+        </button>
+    </div>
+    
+    <!-- Storyline sections if available -->
+    {% if storyline_sections %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Storyline</h5>
+        </div>
+        <div class="card-body">
+            {% for section, content in storyline_sections.items %}
+                {% if section == 'title' %}
+                    <h4>{{ content }}</h4>
+                {% else %}
+                    <h5>{{ section }}</h5>
+                    <p>{{ content|linebreaks }}</p>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Additional info -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Comic Details</h5>
+        </div>
+        <div class="card-body">
+            <p>This comic was generated using artificial intelligence based on content from Wikipedia.</p>
+            <p class="mb-0"><strong>Created with:</strong> WikiComic - Transforming Wikipedia into visual stories</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Scene navigation
+        const sceneButtons = document.querySelectorAll('.scene-btn');
+        const sceneCards = document.querySelectorAll('.scene-card');
+        const prevButtons = document.querySelectorAll('.prev-scene');
+        const nextButtons = document.querySelectorAll('.next-scene');
+        const viewAllBtn = document.getElementById('view-all-btn');
+        
+        // Active scene tracking
+        let currentSceneIndex = 0;
+        
+        // Handle scene button clicks
+        sceneButtons.forEach((button, index) => {
+            button.addEventListener('click', () => {
+                showScene(index);
+            });
+        });
+        
+        // Previous buttons
+        prevButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                if (currentSceneIndex > 0) {
+                    showScene(currentSceneIndex - 1);
+                }
+            });
+        });
+        
+        // Next buttons
+        nextButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                if (currentSceneIndex < sceneCards.length - 1) {
+                    showScene(currentSceneIndex + 1);
+                }
+            });
+        });
+        
+        // View all scenes
+        let viewingAll = false;
+        viewAllBtn.addEventListener('click', () => {
+            viewingAll = !viewingAll;
+            
+            if (viewingAll) {
+                // Show all scenes
+                sceneCards.forEach(card => {
+                    card.style.display = 'block';
+                });
+                viewAllBtn.innerHTML = '<i class="fas fa-compress-alt"></i> View One at a Time';
+                viewAllBtn.classList.replace('btn-success', 'btn-warning');
+            } else {
+                // Show only current scene
+                showScene(currentSceneIndex);
+                viewAllBtn.innerHTML = '<i class="fas fa-images"></i> View All Scenes';
+                viewAllBtn.classList.replace('btn-warning', 'btn-success');
+            }
+        });
+        
+        // Function to show a specific scene
+        function showScene(index) {
+            if (viewingAll) {
+                // Exit "view all" mode first
+                viewingAll = false;
+                viewAllBtn.innerHTML = '<i class="fas fa-images"></i> View All Scenes';
+                viewAllBtn.classList.replace('btn-warning', 'btn-success');
+            }
+            
+            // Hide all scenes
+            sceneCards.forEach(card => {
+                card.style.display = 'none';
+            });
+            
+            // Show selected scene
+            sceneCards[index].style.display = 'block';
+            
+            // Update active button
+            sceneButtons.forEach((btn, i) => {
+                if (i === index) {
+                    btn.classList.remove('btn-outline-primary');
+                    btn.classList.add('btn-primary');
+                } else {
+                    btn.classList.remove('btn-primary');
+                    btn.classList.add('btn-outline-primary');
+                }
+            });
+            
+            // Update current index
+            currentSceneIndex = index;
+            
+            // Scroll to the scene
+            sceneCards[index].scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Initialize the first scene as active
+        sceneButtons[0].classList.remove('btn-outline-primary');
+        sceneButtons[0].classList.add('btn-primary');
+    });
+</script>
+
+<style>
+    @media print {
+        .btn, .card-header, #view-all-btn, #scene-nav {
+            display: none !important;
+        }
+        
+        .scene-card {
+            display: block !important;
+            break-inside: avoid;
+            margin-bottom: 2em;
+            page-break-after: always;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 100%;
+        }
+    }
+    
+    .comic-image {
+        max-height: 500px;
+        object-fit: contain;
+    }
+</style>
+{% endblock %} 
